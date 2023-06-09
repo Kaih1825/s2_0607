@@ -12,23 +12,23 @@ class SqlMethod {
   }
 
   insert(id,articleJsonText,commentJsonText) async{
-    var db=getDB();
-    await db.execute("INSERT INTO article(id,articleJsonText,commentJsonText) VALUES($id,'$articleJsonText','$commentJsonText')");
+    var db=await getDB();
+    db.execute("INSERT INTO article(id,articleJsonText,commentJsonText) VALUES($id,'$articleJsonText','$commentJsonText')");
+  }
+
+  remove(id) async{
+    Database db=await getDB();
+    await db.execute("DELETE FROM article WHERE id=$id");
   }
 
   getAll() async{
-    var db=getDB();
+    var db=await getDB();
     return await db!.rawQuery("SELECT * FROM article");
   }
 
   check(id) async {
-    var db=getDB();
-    try{
-      await db!.rawQuery("SELECT * FROM article WHERE id=$id");
-      return true;
-    }catch(ex){
-      print(ex);
-      return false;
-    }
+    var db=await getDB();
+    var res=await db!.rawQuery("SELECT * FROM article WHERE id=$id") as List;
+    return res.isNotEmpty;
   }
 }

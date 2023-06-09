@@ -1,10 +1,8 @@
 import 'dart:convert';
-import 'dart:ffi';
 
 import 'package:flutter/material.dart';
 import 'package:s2_0607/Methods/SqlMethod.dart';
 import 'package:s2_0607/Widgets/HeaderWidget.dart';
-import 'package:s2_0607/Methods/SqlMethod.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({Key? key}) : super(key: key);
@@ -19,7 +17,8 @@ class _HomeScreenState extends State<HomeScreen> {
   var _sortByalue = "最後回覆";
   var newsList = [];
   var commentCountArray;
-  late List<bool> starArray;
+  var commentArray;
+  List<bool> starArray = [];
 
   @override
   void initState() {
@@ -33,21 +32,22 @@ class _HomeScreenState extends State<HomeScreen> {
         await DefaultAssetBundle.of(context).loadString("res/Data.json");
     newsList = jsonDecode(jsonText)["文章"];
     commentCountArray = List.filled(newsList.length, 0);
-    starArray = List.filled(newsList.length, false);
+    commentArray = List.generate(newsList.length, (index) => List.empty(growable: true));
+    starArray = List.filled(newsList.length,false);
     var tisCommentList = jsonDecode(jsonText)["回應"] as List;
     for (int i = 0; i < tisCommentList.length; i++) {
       commentCountArray[tisCommentList[i]["文章編號"]] += 1;
+      commentArray[tisCommentList[i]["文章編號"]].add(tisCommentList[i]);
     }
+    getStar();
     setState(() {});
   }
 
-  void getStar() async{
-    for(int i =0;i<starArray.length;i++){
-      starArray[i]=SqlMethod().check(i);
+  void getStar() async {
+    for (int i = 0; i < starArray.length; i++) {
+      starArray[i] = await SqlMethod().check(i + 1);
     }
-    setState(() {
-
-    });
+    setState(() {});
   }
 
   @override
@@ -221,14 +221,23 @@ class _HomeScreenState extends State<HomeScreen> {
                         Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 5),
                           child: GestureDetector(
-                              child: Icon(
-                                  starArray[index]
-                                      ? Icons.favorite
-                                      : Icons.favorite_border),
-                            onTap: (){
-                                SqlMethod().insert(newsList[index]["文章編號"], jsonEncode(newsList[index]), "");
-                              // print(jsonEncode(newsList[index]));
-                                setState(() {});
+                            child: starArray[index]
+                                ? const Icon(
+                                    Icons.favorite,
+                                    color: Colors.red,
+                                  )
+                                : const Icon(Icons.favorite_border),
+                            onTap: () {
+                              if (starArray[index]) {
+                                SqlMethod().remove(newsList[index]["文章編號"]);
+                                getStar();
+                              } else {
+                                SqlMethod().insert(newsList[index]["文章編號"],
+                                    jsonEncode(newsList[index]), jsonEncode(commentArray[index]));
+                                getStar();
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(content: Text("已加入我的最愛")));
+                              }
                             },
                           ),
                         )
