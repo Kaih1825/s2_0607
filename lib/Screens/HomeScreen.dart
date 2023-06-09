@@ -19,6 +19,7 @@ class _HomeScreenState extends State<HomeScreen> {
   var _sortByalue = "最後回覆";
   var newsList = [];
   var commentCountArray;
+  late List<bool> starArray;
 
   @override
   void initState() {
@@ -32,11 +33,21 @@ class _HomeScreenState extends State<HomeScreen> {
         await DefaultAssetBundle.of(context).loadString("res/Data.json");
     newsList = jsonDecode(jsonText)["文章"];
     commentCountArray = List.filled(newsList.length, 0);
+    starArray = List.filled(newsList.length, false);
     var tisCommentList = jsonDecode(jsonText)["回應"] as List;
     for (int i = 0; i < tisCommentList.length; i++) {
       commentCountArray[tisCommentList[i]["文章編號"]] += 1;
     }
     setState(() {});
+  }
+
+  void getStar() async{
+    for(int i =0;i<starArray.length;i++){
+      starArray[i]=SqlMethod().check(i);
+    }
+    setState(() {
+
+    });
   }
 
   @override
@@ -211,7 +222,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           padding: const EdgeInsets.symmetric(horizontal: 5),
                           child: GestureDetector(
                               child: Icon(
-                                  SqlMethod().check(newsList[index]["文章編號"])
+                                  starArray[index]
                                       ? Icons.favorite
                                       : Icons.favorite_border),
                             onTap: (){

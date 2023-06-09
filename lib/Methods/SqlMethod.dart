@@ -13,7 +13,7 @@ class SqlMethod {
 
   insert(id,articleJsonText,commentJsonText) async{
     var db=getDB();
-    db.execute("INSERT INTO article(id,articleJsonText,commentJsonText) VALUES($id,'$articleJsonText','$commentJsonText')");
+    await db.execute("INSERT INTO article(id,articleJsonText,commentJsonText) VALUES($id,'$articleJsonText','$commentJsonText')");
   }
 
   getAll() async{
@@ -21,12 +21,13 @@ class SqlMethod {
     return await db!.rawQuery("SELECT * FROM article");
   }
 
-  check(id) {
+  check(id) async {
     var db=getDB();
     try{
-      db!.rawQuery("SELECT * FROM article WHERE id=$id");
+      await db!.rawQuery("SELECT * FROM article WHERE id=$id");
       return true;
     }catch(ex){
+      print(ex);
       return false;
     }
   }
