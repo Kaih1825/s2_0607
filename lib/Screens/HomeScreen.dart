@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:s2_0607/Methods/SqlMethod.dart';
 import 'package:s2_0607/Screens/ArticleScreen.dart';
+import 'package:s2_0607/Widgets/DrawerWidget.dart';
 import 'package:s2_0607/Widgets/HeaderWidget.dart';
 import 'package:s2_0607/Widgets/HomeListTags.dart';
 import 'package:get/get.dart';
@@ -16,13 +17,13 @@ class HomeScreen extends StatefulWidget {
 }
 
 var newsList = [].obs;
+var starArray = [].obs;
 
 class _HomeScreenState extends State<HomeScreen> {
   final _scaffoldKey = GlobalKey<ScaffoldState>();
   var _sortByalue = "最後回覆";
   var commentCountArray;
   var commentArray;
-  List<bool> starArray = [];
   var tagsColor = {
     "WorldSkills": Colors.blue.shade900,
     "全國技能競賽": Colors.purple.shade900,
@@ -43,7 +44,7 @@ class _HomeScreenState extends State<HomeScreen> {
     commentCountArray = List.filled(newsList.length, 0);
     commentArray =
         List.generate(newsList.length, (index) => List.empty(growable: true));
-    starArray = List.filled(newsList.length, false);
+    starArray.value = List.filled(newsList.length, false);
     var tisCommentList = jsonDecode(jsonText)["回應"] as List;
     for (int i = 0; i < tisCommentList.length; i++) {
       commentCountArray[tisCommentList[i]["文章編號"] - 1] += 1;
@@ -64,13 +65,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     return Obx(() => Scaffold(
           key: _scaffoldKey,
-          drawer: Drawer(
-            child: SafeArea(
-              child: Column(
-                children: [Text("SS"), Text("ssss")],
-              ),
-            ),
-          ),
+          drawer: DrawerWidget(),
           body: SafeArea(
               child: Padding(
             padding: const EdgeInsets.only(top: 8.0),
@@ -279,14 +274,17 @@ class _HomeScreenState extends State<HomeScreen> {
                               Padding(
                                 padding: const EdgeInsets.only(left: 5),
                                 child: GestureDetector(
-                                  child: starArray[newsList[index]["文章編號"]-1]
-                                      ? const Icon(
-                                          Icons.favorite,
-                                          color: Colors.red,
-                                        )
-                                      : const Icon(Icons.favorite_border),
+                                  child: Obx(
+                                    () => starArray[newsList[index]["文章編號"] - 1]
+                                        ? const Icon(
+                                            Icons.favorite,
+                                            color: Colors.red,
+                                          )
+                                        : const Icon(Icons.favorite_border),
+                                  ),
                                   onTap: () {
-                                    if (starArray[newsList[index]["文章編號"]-1]) {
+                                    if (starArray[
+                                        newsList[index]["文章編號"] - 1]) {
                                       SqlMethod()
                                           .remove(newsList[index]["文章編號"]);
                                       getStar();
@@ -308,6 +306,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         ),
                         onTap: () {
                           Get.to(ArticleScreen(
+                            articalId: newsList[index]["文章編號"],
                             articleMap: newsList[index],
                             commentMap: commentArray[index],
                           ));
