@@ -1,9 +1,15 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import 'package:s2_0607/Screens/HomeScreen.dart';
 
 class HeaderWidget extends StatefulWidget {
   final GlobalKey<ScaffoldState> scaffoldKey;
-  final TextEditingController controller;
-  const HeaderWidget({Key? key,required this.scaffoldKey, required this.controller}) : super(key: key);
+
+  const HeaderWidget(
+      {Key? key, required this.scaffoldKey})
+      : super(key: key);
 
   @override
   State<HeaderWidget> createState() => _HeaderWidgetState();
@@ -32,15 +38,31 @@ class _HeaderWidgetState extends State<HeaderWidget> {
               child: Padding(
                 padding: const EdgeInsets.only(left: 10.0),
                 child: TextField(
-                  controller: widget.controller,
                   decoration: const InputDecoration(
                       hintText: "搜尋",
                       hintStyle: TextStyle(fontSize: 13),
-                      icon: Icon(Icons.search,size: 13,),
-                      contentPadding: EdgeInsets.only(left:-15,top: -20),
+                      icon: Icon(Icons.search, size: 13,),
+                      contentPadding: EdgeInsets.only(left: -15, top: -20),
                       prefixIconColor: Colors.grey,
-                      border:InputBorder.none
+                      border: InputBorder.none
                   ),
+                  onChanged: (value) async {
+
+                    var jsonText = await DefaultAssetBundle.of(context).loadString(
+                        "res/Data.json");
+                    var articles = jsonDecode(jsonText)["文章"] as List;
+                    var searchedArticle = List.empty(growable: true);
+                    if(value==""){
+                      newsList.value=articles;
+                      return;
+                    }
+                    for (int i = 0; i < articles.length; i++) {
+                      if (articles[i]["標題"].toString().toLowerCase().contains(value.toLowerCase())) {
+                        searchedArticle.add(articles[i]);
+                      }
+                    }
+                    newsList(searchedArticle.obs);
+                  },
                 ),
               ),
             ),
