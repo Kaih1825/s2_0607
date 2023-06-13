@@ -5,8 +5,10 @@ import 'package:s2_0607/Screens/HomeScreen.dart';
 import 'package:s2_0607/Widgets/ArticleTags.dart';
 import 'package:s2_0607/Widgets/DrawerWidget.dart';
 import 'package:s2_0607/Widgets/HeaderWidget.dart';
+import 'package:s2_0607/Widgets/LoginDialog.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../Methods/SqlMethod.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class ArticleScreen extends StatefulWidget {
   final articalId;
@@ -35,6 +37,8 @@ class _ArticleScreenState extends State<ArticleScreen> {
   var deepBlue = Color.fromARGB(255, 12, 47, 107);
   var isHeart = false.obs;
   var showAddFriendPopup = false;
+  var isFriend = false;
+  var islogin = false;
 
   @override
   void initState() {
@@ -46,7 +50,11 @@ class _ArticleScreenState extends State<ArticleScreen> {
   }
 
   void getStar() async {
-    isHeart.value = await SqlMethod().check(widget.articalId);
+    isHeart.value = await ArticleSqlMethod().check(widget.articalId);
+    isFriend = await FriendSqlMethod().getFriendState(widget.articleMap["發布者"]);
+    var sp = await SharedPreferences.getInstance();
+    islogin = sp.getBool("isLogin") ?? false;
+    setState(() {});
   }
 
   @override
@@ -103,11 +111,88 @@ class _ArticleScreenState extends State<ArticleScreen> {
             Expanded(
               child: SingleChildScrollView(
                 child: Stack(children: [
-                  GestureDetector(
-                    child: Column(
-                      children: [
+                  Column(
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.only(top: 10.0, right: 20),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            GestureDetector(
+                              onTap: () {
+                                showAddFriendPopup = !showAddFriendPopup;
+                                setState(() {});
+                              },
+                              child: Padding(
+                                padding: const EdgeInsets.only(
+                                    left: 20.0, right: 10),
+                                child: Container(
+                                  decoration: BoxDecoration(
+                                      color: Colors.white,
+                                      borderRadius: BorderRadius.circular(360),
+                                      border: Border.all(
+                                          color: deepBlue, width: 1)),
+                                  child: Padding(
+                                    padding: const EdgeInsets.all(2.0),
+                                    child: Image.asset(
+                                      "res/girl.png",
+                                      width: 50,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                            Expanded(
+                              child: Column(
+                                children: [
+                                  Row(
+                                    children: [
+                                      Text(
+                                        widget.articleMap["發布者"] ?? "未知",
+                                        style: TextStyle(
+                                            fontWeight: FontWeight.bold),
+                                      ),
+                                      Padding(
+                                        padding:
+                                            const EdgeInsets.only(left: 3.0),
+                                        child: Text(
+                                          "${date[2]}年${date[0]}月${date[1]}日",
+                                          style: TextStyle(fontSize: 12),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  widget.articleMap["文章內容"] != null
+                                      ? Text(
+                                          widget.articleMap["文章內容"],
+                                          style: TextStyle(fontSize: 12),
+                                        )
+                                      : GestureDetector(
+                                          onTap: () async {
+                                            await launchUrl(
+                                                Uri.parse(
+                                                    widget.articleMap["連結"]),
+                                                mode: LaunchMode
+                                                    .externalApplication);
+                                          },
+                                          child: Text(
+                                            widget.articleMap["連結顯示文字"],
+                                            style: TextStyle(
+                                                fontSize: 12,
+                                                color: Colors.blue,
+                                                decoration:
+                                                    TextDecoration.underline),
+                                          ),
+                                        ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      for (var i in widget.commentMap)
                         Padding(
-                          padding: const EdgeInsets.only(top: 10.0, right: 20),
+                          padding: const EdgeInsets.only(top: 20.0, right: 20),
                           child: Row(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
@@ -131,11 +216,12 @@ class _ArticleScreenState extends State<ArticleScreen> {
                               ),
                               Expanded(
                                 child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Row(
                                       children: [
                                         Text(
-                                          widget.articleMap["發布者"] ?? "未知",
+                                          i["發布者"] ?? "未知",
                                           style: TextStyle(
                                               fontWeight: FontWeight.bold),
                                         ),
@@ -143,15 +229,16 @@ class _ArticleScreenState extends State<ArticleScreen> {
                                           padding:
                                               const EdgeInsets.only(left: 3.0),
                                           child: Text(
-                                            "${date[2]}年${date[0]}月${date[1]}日",
-                                            style: TextStyle(fontSize: 12),
+                                            "${i["回應日期"].toString().split("/")[2]}年${i["回應日期"].toString().split("/")[0]}月${i["回應日期"].toString().split("/")[1]}日",
+                                            style: TextStyle(
+                                                fontSize: 12, color: deepBlue),
                                           ),
                                         ),
                                       ],
                                     ),
-                                    widget.articleMap["文章內容"] != null
+                                    i["回應內容"] != null
                                         ? Text(
-                                            widget.articleMap["文章內容"],
+                                            i["回應內容"],
                                             style: TextStyle(fontSize: 12),
                                           )
                                         : GestureDetector(
@@ -177,90 +264,7 @@ class _ArticleScreenState extends State<ArticleScreen> {
                             ],
                           ),
                         ),
-                        for (var i in widget.commentMap)
-                          Padding(
-                            padding:
-                                const EdgeInsets.only(top: 20.0, right: 20),
-                            child: Row(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Padding(
-                                  padding: const EdgeInsets.only(
-                                      left: 20.0, right: 10),
-                                  child: Container(
-                                    decoration: BoxDecoration(
-                                        color: Colors.white,
-                                        borderRadius:
-                                            BorderRadius.circular(360),
-                                        border: Border.all(
-                                            color: deepBlue, width: 1)),
-                                    child: Padding(
-                                      padding: const EdgeInsets.all(2.0),
-                                      child: Image.asset(
-                                        "res/girl.png",
-                                        width: 50,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Row(
-                                        children: [
-                                          Text(
-                                            i["發布者"] ?? "未知",
-                                            style: TextStyle(
-                                                fontWeight: FontWeight.bold),
-                                          ),
-                                          Padding(
-                                            padding: const EdgeInsets.only(
-                                                left: 3.0),
-                                            child: Text(
-                                              "${i["回應日期"].toString().split("/")[2]}年${i["回應日期"].toString().split("/")[0]}月${i["回應日期"].toString().split("/")[1]}日",
-                                              style: TextStyle(
-                                                  fontSize: 12,
-                                                  color: deepBlue),
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                      i["回應內容"] != null
-                                          ? Text(
-                                              i["回應內容"],
-                                              style: TextStyle(fontSize: 12),
-                                            )
-                                          : GestureDetector(
-                                              onTap: () async {
-                                                await launchUrl(
-                                                    Uri.parse(widget
-                                                        .articleMap["連結"]),
-                                                    mode: LaunchMode
-                                                        .externalApplication);
-                                              },
-                                              child: Text(
-                                                widget.articleMap["連結顯示文字"],
-                                                style: TextStyle(
-                                                    fontSize: 12,
-                                                    color: Colors.blue,
-                                                    decoration: TextDecoration
-                                                        .underline),
-                                              ),
-                                            ),
-                                    ],
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                      ],
-                    ),
-                    onTap: () {
-                      showAddFriendPopup = !showAddFriendPopup;
-                      setState(() {});
-                    },
+                    ],
                   ),
                   showAddFriendPopup && widget.articleMap["發布者"] != null
                       ? Padding(
@@ -310,13 +314,21 @@ class _ArticleScreenState extends State<ArticleScreen> {
                                             color: Colors.white),
                                       ),
                                       ElevatedButton(
-                                        child: Text(
-                                          "加入好友",
-                                          style: TextStyle(color: Colors.black),
-                                        ),
-                                        onPressed: () {},
+                                        onPressed: () async {
+                                          await FriendSqlMethod()
+                                              .toggleFriendState(
+                                                  widget.articleMap["發布者"]);
+                                          isFriend = await FriendSqlMethod()
+                                              .getFriendState(
+                                                  widget.articleMap["發布者"]);
+                                          setState(() {});
+                                        },
                                         style: ElevatedButton.styleFrom(
                                             backgroundColor: Colors.white),
+                                        child: Text(
+                                          isFriend ? "移除好友" : "加入好友",
+                                          style: TextStyle(color: Colors.black),
+                                        ),
                                       )
                                     ],
                                   ),
@@ -343,7 +355,14 @@ class _ArticleScreenState extends State<ArticleScreen> {
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Image.asset("res/message.png", width: 20),
+                            GestureDetector(
+                              child: Image.asset("res/message.png", width: 20),
+                              onTap: (){
+                                if(!islogin){
+                                  Get.dialog(LoginDialog());
+                                }
+                              },
+                            ),
                             Obx(
                               () => GestureDetector(
                                 child: Image.asset(
@@ -354,9 +373,9 @@ class _ArticleScreenState extends State<ArticleScreen> {
                                 ),
                                 onTap: () {
                                   if (isHeart.value) {
-                                    SqlMethod().remove(widget.articalId);
+                                    ArticleSqlMethod().remove(widget.articalId);
                                   } else {
-                                    SqlMethod().insert(widget.articalId,
+                                    ArticleSqlMethod().insert(widget.articalId,
                                         widget.articleMap, widget.commentMap);
                                     ScaffoldMessenger.of(context).showSnackBar(
                                         const SnackBar(

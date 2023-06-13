@@ -56,7 +56,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   void getStar() async {
     for (int i = 0; i < starArray.length; i++) {
-      starArray[i] = await SqlMethod().check(i + 1);
+      starArray[i] = await ArticleSqlMethod().check(i + 1);
     }
     setState(() {});
   }
@@ -285,11 +285,11 @@ class _HomeScreenState extends State<HomeScreen> {
                                   onTap: () {
                                     if (starArray[
                                         newsList[index]["文章編號"] - 1]) {
-                                      SqlMethod()
+                                      ArticleSqlMethod()
                                           .remove(newsList[index]["文章編號"]);
                                       getStar();
                                     } else {
-                                      SqlMethod().insert(
+                                      ArticleSqlMethod().insert(
                                           newsList[index]["文章編號"],
                                           jsonEncode(newsList[index]),
                                           jsonEncode(commentArray[index]));
