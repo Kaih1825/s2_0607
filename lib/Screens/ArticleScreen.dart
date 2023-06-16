@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:get/get.dart';
 import 'package:s2_0607/Screens/HomeScreen.dart';
+import 'package:s2_0607/Widgets/AddTagsDialog.dart';
 import 'package:s2_0607/Widgets/ArticleTags.dart';
+import 'package:s2_0607/Widgets/CommitDialog.dart';
 import 'package:s2_0607/Widgets/DrawerWidget.dart';
 import 'package:s2_0607/Widgets/HeaderWidget.dart';
 import 'package:s2_0607/Widgets/LoginDialog.dart';
@@ -26,6 +28,8 @@ class ArticleScreen extends StatefulWidget {
   State<ArticleScreen> createState() => _ArticleScreenState();
 }
 
+var orderByTag="全部貼文".obs;
+
 class _ArticleScreenState extends State<ArticleScreen> {
   final _key = GlobalKey<ScaffoldState>();
   var tagsColor = {
@@ -38,7 +42,6 @@ class _ArticleScreenState extends State<ArticleScreen> {
   var isHeart = false.obs;
   var showAddFriendPopup = false;
   var isFriend = false;
-  var islogin = false;
 
   @override
   void initState() {
@@ -53,7 +56,7 @@ class _ArticleScreenState extends State<ArticleScreen> {
     isHeart.value = await ArticleSqlMethod().check(widget.articalId);
     isFriend = await FriendSqlMethod().getFriendState(widget.articleMap["發布者"]);
     var sp = await SharedPreferences.getInstance();
-    islogin = sp.getBool("isLogin") ?? false;
+    islogin.value = sp.getBool("isLogin") ?? false;
     setState(() {});
   }
 
@@ -208,7 +211,9 @@ class _ArticleScreenState extends State<ArticleScreen> {
                                   child: Padding(
                                     padding: const EdgeInsets.all(2.0),
                                     child: Image.asset(
-                                      "res/girl.png",
+                                      i["gender"] == null
+                                          ? "res/girl.png"
+                                          : "res/${i["gender"] == "男" ? "boy" : "girl"}.png",
                                       width: 50,
                                     ),
                                   ),
@@ -251,7 +256,7 @@ class _ArticleScreenState extends State<ArticleScreen> {
                                             },
                                             child: Text(
                                               widget.articleMap["連結顯示文字"],
-                                              style: TextStyle(
+                                              style: const TextStyle(
                                                   fontSize: 12,
                                                   color: Colors.blue,
                                                   decoration:
@@ -357,9 +362,18 @@ class _ArticleScreenState extends State<ArticleScreen> {
                           children: [
                             GestureDetector(
                               child: Image.asset("res/message.png", width: 20),
-                              onTap: (){
-                                if(!islogin){
+                              onTap: () {
+                                if (!islogin.value) {
                                   Get.dialog(LoginDialog());
+                                } else {
+                                  Get.dialog(CommitDialog()).then((value) {
+                                    if(value!=null){
+                                      widget.commentMap.add(value);
+                                      commentCountArray[widget.articalId-1]++;
+                                      print(commentCountArray);
+                                    }
+                                    setState(() {});
+                                  });
                                 }
                               },
                             ),
@@ -387,7 +401,12 @@ class _ArticleScreenState extends State<ArticleScreen> {
                                 },
                               ),
                             ),
-                            Image.asset("res/add.png", width: 20),
+                            GestureDetector(
+                              child: Image.asset("res/add.png", width: 20),
+                              onTap: () {
+                                Get.dialog(AddTagsDialog(tags: [widget.articleMap["主分類"].toString(),widget.articleMap["子分類"]??""]));
+                              },
+                            ),
                             Image.asset("res/friend.png", width: 20),
                             Image.asset("res/member.png", width: 20),
                           ],

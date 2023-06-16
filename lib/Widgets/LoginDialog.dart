@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import 'package:s2_0607/Methods/SqlMethod.dart';
 import 'package:s2_0607/Widgets/ResDialog.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'HeaderWidget.dart';
 
 class LoginDialog extends StatefulWidget {
   const LoginDialog({Key? key}) : super(key: key);
@@ -27,8 +28,8 @@ class _LoginDialogState extends State<LoginDialog> {
 
   void getSp()async{
     var sp=await SharedPreferences.getInstance();
-    emailController.text=sp.getString("tempEmail")??"1";
-    passwordController.text=sp.getString("tempPwd")??"1";
+    emailController.text=sp.getString("tempEmail")??"";
+    passwordController.text=sp.getString("tempPwd")??"";
     setState(() {});
   }
   @override
@@ -134,7 +135,13 @@ class _LoginDialogState extends State<LoginDialog> {
                             if(!await UserSqlMethod().login(emailController.text, passwordController.text)){
                               pwdError="帳號或密碼錯誤";
                               setState(() {});
-                            }else Get.back();
+                            }else {
+                              var sp=await SharedPreferences.getInstance();
+                              sp.setBool("isLogin", true);
+                              sp.setString("email", emailController.text);
+                              islogin.value=true;
+                              Get.back();
+                            }
                           },
                           child: Container(
                             width: double.infinity,

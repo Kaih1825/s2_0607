@@ -1,3 +1,4 @@
+import 'package:get/get.dart';
 import 'package:sqflite/sqflite.dart';
 
 class ArticleSqlMethod {
@@ -5,10 +6,11 @@ class ArticleSqlMethod {
 
   getDB() async {
     database ??=
-        await openDatabase("db.db", version: 1, onCreate: (db, version) {
-      db.execute(
+        await openDatabase("db.db", version: 1);
+    try{
+      database!.execute(
           "CREATE TABLE article(id INTEGER PRIMARY KEY,articleJsonText TEXT,commentJsonText TEXT)");
-    });
+    }catch(ex){}
     return database;
   }
 
@@ -78,9 +80,11 @@ class UserSqlMethod{
   }
 
   insert(email,password,nick,gender)async{
-    var db=await getDB();
+    Database db=await getDB();
     try{
-      db.excuate("INSERT INTO user(email,password,nick,gender) VALUES ('$email','$password','$nick','$gender')");
+      var res=await db.rawQuery("SELECT * FROM user WHERE email='$email'");
+      if(res.isNotEmpty) return false;
+      db.execute("INSERT INTO user(email,password,nick,gender) VALUES ('$email','$password','$nick','$gender')");
       return true;
     }catch(ex){
       print(ex);
@@ -92,10 +96,59 @@ class UserSqlMethod{
     Database db=await getDB();
     try{
       var res=await db.rawQuery("SELECT password FROM user WHERE email='$email'");
-      print(res.length);
-      return res[0]["password"]==password;
+      print("oo"+res.length.toString());
+      if(res.isNotEmpty&&res[0]["password"]==password){
+        return true;
+      }
+      else{
+        var res2=await db.rawQuery("SELECT password FROM user WHERE nick='$email'");
+        print("ss"+res2.length.toString());
+        if(res2[0]["password"]==password){
+          return true;
+        }else{
+          return false;
+        }
+      }
     }catch(ex){
       return false;
     }
+  }
+
+  getUserInfo(email)async{
+    Database db=await getDB();
+    try{
+      var res=await db.rawQuery("SELECT * FROM user WHERE email='$email'");
+      if(res.isEmpty){
+        res=await db.rawQuery("SELECT * FROM user WHERE nick='$email'");
+      }
+      return res;
+    }catch(ex){
+      return false;
+    }
+  }
+}
+
+class TagsSqlMethod{
+  Database? _db;
+  Future<Database> getDB()async{
+    _db??=await openDatabase("db.db");
+    try{
+      _db!.execute("CREATE TABLE tags(name TEXT PRIMARY KEY)");
+    }catch(ex){}
+    return _db!;
+  }
+
+  insert(tagName)async{
+    var db=await getDB();
+    if((await db.rawQuery("SELECT * FROM tags WHERE name='$tagName'")).isNotEmpty){
+      return false;
+    }
+    db.execute("INSERT INTO tags VALUES('$tagName')");
+    return true;
+  }
+
+  getAll()async{
+    var db=await getDB();
+    return db.rawQuery("SELECT * FROM tags");
   }
 }

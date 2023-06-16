@@ -18,12 +18,12 @@ class HomeScreen extends StatefulWidget {
 
 var newsList = [].obs;
 var starArray = [].obs;
+var commentCountArray=[].obs;
+var commentArray=[].obs;
 
 class _HomeScreenState extends State<HomeScreen> {
   final _scaffoldKey = GlobalKey<ScaffoldState>();
-  var _sortByalue = "最後回覆";
-  var commentCountArray;
-  var commentArray;
+  var _sortByalue = "最新貼文";
   var tagsColor = {
     "WorldSkills": Colors.blue.shade900,
     "全國技能競賽": Colors.purple.shade900,
@@ -41,8 +41,8 @@ class _HomeScreenState extends State<HomeScreen> {
     var jsonText =
         await DefaultAssetBundle.of(context).loadString("res/Data.json");
     newsList.value = jsonDecode(jsonText)["文章"];
-    commentCountArray = List.filled(newsList.length, 0);
-    commentArray =
+    commentCountArray.value = List.filled(newsList.length, 0);
+    commentArray.value =
         List.generate(newsList.length, (index) => List.empty(growable: true));
     starArray.value = List.filled(newsList.length, false);
     var tisCommentList = jsonDecode(jsonText)["回應"] as List;
@@ -50,6 +50,16 @@ class _HomeScreenState extends State<HomeScreen> {
       commentCountArray[tisCommentList[i]["文章編號"] - 1] += 1;
       commentArray[tisCommentList[i]["文章編號"] - 1].add(tisCommentList[i]);
     }
+    newsList.sort((b,a){
+      if(a["發文日期"]!=null && b["發文日期"]!=null){
+        var aDate=a["發文日期"].toString().split("/");
+        var bDate=b["發文日期"].toString().split("/");
+        return "${aDate[2]}${aDate[0]}${aDate[1]}".compareTo("${bDate[2]}${bDate[0]}${bDate[1]}");
+      }
+      else {
+        return 0;
+      }
+    });
     getStar();
     setState(() {});
   }
@@ -148,9 +158,48 @@ class _HomeScreenState extends State<HomeScreen> {
                               borderRadius: BorderRadius.circular(10),
                             ),
                             onSelected: (value) {
-                              setState(() {
-                                _sortByalue = value;
-                              });
+                              _sortByalue = value;
+                              if(_sortByalue=="最舊貼文"){
+                                newsList.sort((a,b){
+                                  if(a["發文日期"]!=null && b["發文日期"]!=null){
+                                    var aDate=a["發文日期"].toString().split("/");
+                                    var bDate=b["發文日期"].toString().split("/");
+                                    return "${aDate[2]}${aDate[0]}${aDate[1]}".compareTo("${bDate[2]}${bDate[0]}${bDate[1]}");
+                                  }
+                                  else {
+                                    return 0;
+                                  }
+                                });
+                              }
+                              else if(_sortByalue=="最新貼文"){
+                                newsList.sort((b,a){
+                                  if(a["發文日期"]!=null && b["發文日期"]!=null){
+                                    var aDate=a["發文日期"].toString().split("/");
+                                    var bDate=b["發文日期"].toString().split("/");
+                                    return "${aDate[2]}${aDate[0]}${aDate[1]}".compareTo("${bDate[2]}${bDate[0]}${bDate[1]}");
+                                  }
+                                  else {
+                                    return 0;
+                                  }
+                                });
+                              }
+                              else if(_sortByalue=="最熱貼文"){
+                                newsList.sort((a,b){
+                                  print(a["文章編號"]);
+                                  // print("$count x${commentCountArray[newsList.indexOf(a)]} y ${commentCountArray[newsList.indexOf(b)]}");
+                                  // var x=commentCountArray[newsList.indexOf(a)];
+                                  // var y=commentCountArray[newsList.indexOf(b)];
+                                  if(newsList.indexOf(a)!=-1){
+                                    var x=commentCountArray[newsList.indexOf(a)];
+                                    var y=commentCountArray[newsList.indexOf(b)];
+                                    return x.compareTo(y);
+                                  }
+                                  return 0;
+                                });
+                                print(commentCountArray.length);
+                              }
+
+                              setState(() {});
                             },
                             child: Padding(
                               padding: const EdgeInsets.all(8.0),
@@ -200,7 +249,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                         Spacer(),
                                         Padding(
                                           padding:
-                                              const EdgeInsets.only(right: 5),
+                                          const EdgeInsets.only(right: 5),
                                           child: ConstrainedBox(
                                             constraints: const BoxConstraints(
                                                 maxWidth: 80),
@@ -208,28 +257,28 @@ class _HomeScreenState extends State<HomeScreen> {
                                               scrollDirection: Axis.horizontal,
                                               child: Row(
                                                 mainAxisAlignment:
-                                                    MainAxisAlignment.end,
+                                                MainAxisAlignment.end,
                                                 children: [
                                                   HomeListTags(
                                                     tagName: newsList[index]
-                                                        ["主分類"],
+                                                    ["主分類"],
                                                     backgroundColor: tagsColor[
-                                                            newsList[index]
-                                                                ["主分類"]] ??
+                                                    newsList[index]
+                                                    ["主分類"]] ??
                                                         Colors.black,
                                                   ),
                                                   newsList[index]["子分類"] != null
                                                       ? HomeListTags(
-                                                          tagName:
-                                                              newsList[index]
-                                                                  ["子分類"],
-                                                          backgroundColor:
-                                                              tagsColor[newsList[
-                                                                          index]
-                                                                      [
-                                                                      "子分類"]] ??
-                                                                  Colors.black,
-                                                        )
+                                                    tagName:
+                                                    newsList[index]
+                                                    ["子分類"],
+                                                    backgroundColor:
+                                                    tagsColor[newsList[
+                                                    index]
+                                                    [
+                                                    "子分類"]] ??
+                                                        Colors.black,
+                                                  )
                                                       : Container(),
                                                 ],
                                               ),
@@ -242,19 +291,19 @@ class _HomeScreenState extends State<HomeScreen> {
                                               Icons.messenger_outline_rounded,
                                               size: 12,
                                             ),
-                                            Text(commentCountArray == null
-                                                ? "0"
-                                                : commentCountArray[index]
-                                                    .toString()),
+                                            Obx(() => Text(commentCountArray == null
+                                                ? "s"
+                                                : commentCountArray[newsList[index]["文章編號"]-1]
+                                                .toString()),)
                                           ],
                                         ),
                                       ],
                                     ),
                                     Row(
                                       mainAxisAlignment:
-                                          MainAxisAlignment.start,
+                                      MainAxisAlignment.start,
                                       crossAxisAlignment:
-                                          CrossAxisAlignment.start,
+                                      CrossAxisAlignment.start,
                                       children: [
                                         Text(
                                           newsList[index]["發布者"] ?? "未知",
@@ -275,16 +324,16 @@ class _HomeScreenState extends State<HomeScreen> {
                                 padding: const EdgeInsets.only(left: 5),
                                 child: GestureDetector(
                                   child: Obx(
-                                    () => starArray[newsList[index]["文章編號"] - 1]
+                                        () => starArray[newsList[index]["文章編號"] - 1]
                                         ? const Icon(
-                                            Icons.favorite,
-                                            color: Colors.red,
-                                          )
+                                      Icons.favorite,
+                                      color: Colors.red,
+                                    )
                                         : const Icon(Icons.favorite_border),
                                   ),
                                   onTap: () {
                                     if (starArray[
-                                        newsList[index]["文章編號"] - 1]) {
+                                    newsList[index]["文章編號"] - 1]) {
                                       ArticleSqlMethod()
                                           .remove(newsList[index]["文章編號"]);
                                       getStar();
@@ -296,7 +345,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                       getStar();
                                       ScaffoldMessenger.of(context)
                                           .showSnackBar(const SnackBar(
-                                              content: Text("已加入我的最愛")));
+                                          content: Text("已加入我的最愛")));
                                     }
                                   },
                                 ),
